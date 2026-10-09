@@ -21,6 +21,20 @@ cd web && npm install && npm run dev
 
 Open http://localhost:3000 and sign in as `admin@learninglab.test` / `learning-lab-dev`.
 
+## Lint and format
+
+From the repo root, after `uv sync` in `api/` and `npm install` in `web/`:
+
+```bash
+scripts/lint
+scripts/lint --fix
+scripts/lint web
+```
+
+`scripts/lint` checks the API and the web app. It exits non-zero when either is dirty, and it still checks the other side after a failure. `scripts/lint --fix` applies safe lint fixes and formats both. Pass `api` or `web` to limit the run.
+
+GitHub Actions runs `scripts/lint` on every pull request and on every push to `main`.
+
 ## Stack
 
 - Frontend: Next.js and TypeScript

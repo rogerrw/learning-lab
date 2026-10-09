@@ -1,17 +1,19 @@
 import os
 
-os.environ["DATABASE_URL"] = "postgresql+psycopg://learning_lab:learning_lab@localhost:5434/learning_lab_test"
+os.environ["DATABASE_URL"] = (
+    "postgresql+psycopg://learning_lab:learning_lab@localhost:5434/learning_lab_test"
+)
 os.environ["PASSWORD_BCRYPT_ROUNDS"] = "4"
 
 from collections.abc import Iterator
 
 import pytest
-from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from alembic import command
 from app.config import get_settings
 from app.database import SessionLocal, engine
 from app.main import app
@@ -29,7 +31,9 @@ def migrated() -> None:
 def clean_tables() -> Iterator[None]:
     yield
     with engine.begin() as connection:
-        connection.execute(text("TRUNCATE sessions, org_memberships, users, organizations CASCADE"))
+        connection.execute(
+            text("TRUNCATE sessions, org_memberships, users, organizations CASCADE")
+        )
 
 
 @pytest.fixture

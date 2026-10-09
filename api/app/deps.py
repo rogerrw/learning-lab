@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import Depends, HTTPException, Request
 from sqlalchemy import select
@@ -16,7 +16,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     if not raw_token:
         raise HTTPException(status_code=401, detail="Sign in required.")
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     session = db.scalar(
         select(UserSession).where(
             UserSession.token_hash == hash_token(raw_token),
@@ -30,7 +30,9 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     user = db.scalar(
         select(User)
         .where(User.id == session.user_id)
-        .options(selectinload(User.memberships).selectinload(OrgMembership.organization))
+        .options(
+            selectinload(User.memberships).selectinload(OrgMembership.organization)
+        )
     )
     if user is None or user.status != "active":
         raise HTTPException(status_code=401, detail="Sign in required.")

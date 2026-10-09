@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.models import OrgMembership, Organization, User
+from app.models import Organization, OrgMembership, User
 from app.security import hash_password
 
 
@@ -30,7 +30,10 @@ def add_user(
 def test_sign_in_returns_membership_and_cookie(client: TestClient, db: Session) -> None:
     add_user(db, email="admin@school.test")
 
-    response = client.post("/api/sessions", json={"email": "Admin@school.test", "password": "correct-password"})
+    response = client.post(
+        "/api/sessions",
+        json={"email": "Admin@school.test", "password": "correct-password"},
+    )
 
     assert response.status_code == 200
     body = response.json()
@@ -51,10 +54,14 @@ def test_sign_in_returns_membership_and_cookie(client: TestClient, db: Session) 
     assert me.json()["email"] == "admin@school.test"
 
 
-def test_wrong_password_does_not_open_a_session(client: TestClient, db: Session) -> None:
+def test_wrong_password_does_not_open_a_session(
+    client: TestClient, db: Session
+) -> None:
     add_user(db, email="admin@school.test")
 
-    response = client.post("/api/sessions", json={"email": "admin@school.test", "password": "nope"})
+    response = client.post(
+        "/api/sessions", json={"email": "admin@school.test", "password": "nope"}
+    )
 
     assert response.status_code == 401
     assert response.json()["detail"] == "Email or password is incorrect."
@@ -65,7 +72,10 @@ def test_wrong_password_does_not_open_a_session(client: TestClient, db: Session)
 def test_disabled_account_cannot_sign_in(client: TestClient, db: Session) -> None:
     add_user(db, email="admin@school.test", status="disabled")
 
-    response = client.post("/api/sessions", json={"email": "admin@school.test", "password": "correct-password"})
+    response = client.post(
+        "/api/sessions",
+        json={"email": "admin@school.test", "password": "correct-password"},
+    )
 
     assert response.status_code == 403
     assert response.json()["detail"] == "This account is disabled."
@@ -73,7 +83,10 @@ def test_disabled_account_cannot_sign_in(client: TestClient, db: Session) -> Non
 
 def test_sign_out_revokes_the_session(client: TestClient, db: Session) -> None:
     add_user(db, email="admin@school.test")
-    client.post("/api/sessions", json={"email": "admin@school.test", "password": "correct-password"})
+    client.post(
+        "/api/sessions",
+        json={"email": "admin@school.test", "password": "correct-password"},
+    )
 
     deleted = client.delete("/api/sessions")
     assert deleted.status_code == 204

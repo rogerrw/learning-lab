@@ -1,0 +1,83 @@
+#!/bin/sh
+set -u
+
+root=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd) || exit 1
+
+fix=0
+selected=""
+
+for arg in "$@"; do
+  case "${arg}" in
+    --fix)
+      fix=1
+      ;;
+    api|web)
+      selected="${selected} ${arg}"
+      ;;
+    *)
+      echo "usage: scripts/lint [--fix] [api|web]..." >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [ -z "${selected}" ]; then
+  selected="api web"
+fi
+
+fail=0
+
+run_api() {
+  if [ "${fix}" -eq 1 ]; then
+    (cd "${root}/api" && uv run --locked ruff check --fix .) || true
+    (cd "${root}/api" && uv run --locked ruff format .) || true
+  fi
+
+  status=0
+  (cd "${root}/api" && uv run --locked ruff check .) || status=1
+  (cd "${root}/api" && uv run --locked ruff format --check .) || status=1
+  if [ "${status}" -eq 0 ]; then
+    if [ "${fix}" -eq 1 ]; then
+      echo "api: fixed"
+    else
+      echo "api: ok"
+    fi
+  else
+    echo "api: dirty"
+    fail=1
+  fi
+}
+
+run_web() {
+  biome="${root}/web/node_modules/.bin/biome"
+  if [ ! -x "${biome}" ]; then
+    echo "web: run npm install in web/ first" >&2
+    echo "web: dirty"
+    fail=1
+    return
+  fi
+
+  if [ "${fix}" -eq 1 ]; then
+    (cd "${root}/web" && "${biome}" check --write .) || true
+  fi
+
+  if (cd "${root}/web" && "${biome}" ci .); then
+    if [ "${fix}" -eq 1 ]; then
+      echo "web: fixed"
+    else
+      echo "web: ok"
+    fi
+  else
+    echo "web: dirty"
+    fail=1
+  fi
+}
+
+for project in ${selected}; do
+  case "${project}" in
+    api) run_api ;;
+    web) run_web ;;
+  esac
+done
+
+exit "${fail}"

@@ -5,7 +5,9 @@ import bcrypt
 
 from app.config import get_settings
 
-_DUMMY_PASSWORD_HASH = bcrypt.hashpw(b"not-a-real-password", bcrypt.gensalt(rounds=4)).decode()
+_DUMMY_PASSWORD_HASH = bcrypt.hashpw(
+    b"not-a-real-password", bcrypt.gensalt(rounds=4)
+).decode()
 
 
 def hash_password(password: str) -> str:

@@ -13,7 +13,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    database_url: str = "postgresql+psycopg://learning_lab:learning_lab@localhost:5434/learning_lab"
+    database_url: str = (
+        "postgresql+psycopg://learning_lab:learning_lab@localhost:5434/learning_lab"
+    )
     session_cookie_name: str = "learning_lab_session"
     session_ttl_days: int = 14
     password_bcrypt_rounds: int = 12
@@ -27,7 +29,9 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        return [
+            origin.strip() for origin in self.cors_origins.split(",") if origin.strip()
+        ]
 
 
 @lru_cache

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
@@ -10,7 +10,7 @@ from app.config import get_settings
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import OrgMembership, User, UserSession
-from app.schemas import LoginRequest, MeOut, MembershipOut
+from app.schemas import LoginRequest, MembershipOut, MeOut
 from app.security import hash_token, new_session_token, verify_password
 
 settings = get_settings()
@@ -25,7 +25,9 @@ app.add_middleware(
 
 
 def to_me(user: User) -> MeOut:
-    memberships = sorted(user.memberships, key=lambda membership: membership.organization.name)
+    memberships = sorted(
+        user.memberships, key=lambda membership: membership.organization.name
+    )
     return MeOut(
         id=user.id,
         email=user.email,
@@ -46,7 +48,9 @@ def load_user(db: Session, user_id: UUID) -> User:
     user = db.scalar(
         select(User)
         .where(User.id == user_id)
-        .options(selectinload(User.memberships).selectinload(OrgMembership.organization))
+        .options(
+            selectinload(User.memberships).selectinload(OrgMembership.organization)
+        )
     )
     if user is None:
         raise HTTPException(status_code=401, detail="Sign in required.")
@@ -72,7 +76,9 @@ def health() -> dict[str, str]:
 
 
 @app.post("/api/sessions", response_model=MeOut)
-def create_session(body: LoginRequest, response: Response, db: Session = Depends(get_db)) -> MeOut:
+def create_session(
+    body: LoginRequest, response: Response, db: Session = Depends(get_db)
+) -> MeOut:
     email = body.email.strip()
     user = db.scalar(select(User).where(User.email == email))
     password_ok = verify_password(body.password, user.password_hash if user else None)
@@ -82,7 +88,7 @@ def create_session(body: LoginRequest, response: Response, db: Session = Depends
         raise HTTPException(status_code=403, detail="This account is disabled.")
 
     raw_token = new_session_token()
-    expires_at = datetime.now(timezone.utc) + timedelta(days=settings.session_ttl_days)
+    expires_at = datetime.now(UTC) + timedelta(days=settings.session_ttl_days)
     db.add(
         UserSession(
             user_id=user.id,
@@ -109,8 +115,14 @@ def delete_session(
 ) -> None:
     raw_token = request.cookies.get(settings.session_cookie_name)
     if raw_token:
-        session = db.scalar(select(UserSession).where(UserSession.token_hash == hash_token(raw_token)))
-        if session is not None and session.user_id == user.id and session.revoked_at is None:
-            session.revoked_at = datetime.now(timezone.utc)
+        session = db.scalar(
+            select(UserSession).where(UserSession.token_hash == hash_token(raw_token))
+        )
+        if (
+            session is not None
+            and session.user_id == user.id
+            and session.revoked_at is None
+        ):
+            session.revoked_at = datetime.now(UTC)
             db.commit()
     response.delete_cookie(settings.session_cookie_name, path="/")

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 type Membership = {
   organization_id: string;
@@ -77,7 +77,10 @@ export default function HomePage() {
     setPending(true);
     setError("");
     try {
-      const response = await fetch("/api/sessions", { method: "DELETE", credentials: "include" });
+      const response = await fetch("/api/sessions", {
+        method: "DELETE",
+        credentials: "include",
+      });
       if (response.ok || response.status === 204) {
         setMe(null);
         return;
@@ -96,7 +99,9 @@ export default function HomePage() {
         <p className="mark">Learning Lab</p>
         <h1>{me ? "Signed in" : "Sign in"}</h1>
         <p className="lede">
-          {me ? "Your school account is open in this browser." : "Use the account your school gave you."}
+          {me
+            ? "Your school account is open in this browser."
+            : "Use the account your school gave you."}
         </p>
         {!ready ? <p className="status">Checking your session…</p> : null}
         {ready && me ? (
@@ -104,7 +109,9 @@ export default function HomePage() {
             <p className="name">{me.display_name}</p>
             <p>{me.email}</p>
             {me.memberships.length === 0 ? (
-              <p className="role">This account is not a member of a school yet.</p>
+              <p className="role">
+                This account is not a member of a school yet.
+              </p>
             ) : (
               me.memberships.map((membership) => (
                 <p className="role" key={membership.organization_id}>

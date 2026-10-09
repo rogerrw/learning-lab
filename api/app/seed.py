@@ -2,14 +2,16 @@ from sqlalchemy import select
 
 from app.config import get_settings
 from app.database import SessionLocal
-from app.models import OrgMembership, Organization, User
+from app.models import Organization, OrgMembership, User
 from app.security import hash_password
 
 
 def seed() -> None:
     settings = get_settings()
     with SessionLocal() as db:
-        org = db.scalar(select(Organization).where(Organization.slug == settings.seed_org_slug))
+        org = db.scalar(
+            select(Organization).where(Organization.slug == settings.seed_org_slug)
+        )
         if org is None:
             org = Organization(name=settings.seed_org_name, slug=settings.seed_org_slug)
             db.add(org)
