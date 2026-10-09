@@ -4,14 +4,15 @@ from uuid import UUID
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.config import get_settings
 from app.database import get_db
 from app.deps import get_current_user
 from app.models import OrgMembership, User, UserSession
-from app.schemas import LoginRequest, MembershipOut, MeOut
-from app.security import hash_token, new_session_token, verify_password
+from app.schemas import LoginRequest, MembershipOut, MeOut, SignupRequest
+from app.security import hash_password, hash_token, new_session_token, verify_password
 
 settings = get_settings()
 app = FastAPI(title="Learning Lab")
@@ -70,6 +71,21 @@ def set_session_cookie(response: Response, raw_token: str) -> None:
     )
 
 
+def open_session(db: Session, user: User, response: Response) -> MeOut:
+    raw_token = new_session_token()
+    expires_at = datetime.now(UTC) + timedelta(days=settings.session_ttl_days)
+    db.add(
+        UserSession(
+            user_id=user.id,
+            token_hash=hash_token(raw_token),
+            expires_at=expires_at,
+        )
+    )
+    db.commit()
+    set_session_cookie(response, raw_token)
+    return to_me(load_user(db, user.id))
+
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -86,19 +102,34 @@ def create_session(
         raise HTTPException(status_code=401, detail="Email or password is incorrect.")
     if user.status != "active":
         raise HTTPException(status_code=403, detail="This account is disabled.")
+    return open_session(db, user, response)
 
-    raw_token = new_session_token()
-    expires_at = datetime.now(UTC) + timedelta(days=settings.session_ttl_days)
-    db.add(
-        UserSession(
-            user_id=user.id,
-            token_hash=hash_token(raw_token),
-            expires_at=expires_at,
+
+@app.post("/api/users", response_model=MeOut, status_code=201)
+def create_user(
+    body: SignupRequest, response: Response, db: Session = Depends(get_db)
+) -> MeOut:
+    existing = db.scalar(select(User).where(User.email == body.email))
+    if existing is not None:
+        raise HTTPException(
+            status_code=409, detail="An account with this email already exists."
         )
+
+    user = User(
+        email=body.email,
+        display_name=body.display_name,
+        password_hash=hash_password(body.password),
+        status="active",
     )
-    db.commit()
-    set_session_cookie(response, raw_token)
-    return to_me(load_user(db, user.id))
+    db.add(user)
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409, detail="An account with this email already exists."
+        ) from None
+    return open_session(db, user, response)
 
 
 @app.get("/api/me", response_model=MeOut)

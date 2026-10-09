@@ -25,6 +25,25 @@ input {
   padding: 32px 16px;
 }
 
+.home {
+  min-height: 100vh;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 28px 20px 64px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 48px;
+}
+
+.top .mark {
+  margin: 0;
+}
+
 .panel {
   width: min(100%, 420px);
 }
@@ -93,6 +112,47 @@ button {
 button:disabled {
   cursor: wait;
   opacity: 0.7;
+}
+
+button.quiet {
+  background: transparent;
+  color: #1c1915;
+  border: 1px solid #cfc6b6;
+}
+
+button.text-button {
+  justify-self: start;
+  width: auto;
+  padding: 0;
+  background: transparent;
+  color: #1f4d3a;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.switch {
+  margin: 0;
+  font-family: "Avenir Next", "Segoe UI", sans-serif;
+  font-size: 14px;
+  color: #5c564c;
+}
+
+.placeholder {
+  margin-top: 8px;
+  padding: 20px;
+  background: #fffdf8;
+  border: 1px solid #ddd6c8;
+}
+
+.placeholder h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.placeholder p {
+  margin: 0;
+  color: #5c564c;
 }
 
 .error {

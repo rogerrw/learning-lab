@@ -5,7 +5,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Learning Lab",
-  description: "Sign in to Learning Lab",
+  description: "Classroom app for teachers and students",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

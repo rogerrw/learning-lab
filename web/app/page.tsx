@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
+import { type SubmitEvent, useEffect, useState } from "react";
 
 type Membership = {
   organization_id: string;
@@ -16,17 +16,16 @@ type Me = {
   memberships: Membership[];
 };
 
-function roleLabel(role: string): string {
-  if (role === "org_admin") return "Administrator";
-  if (role === "member") return "Member";
-  return role;
-}
+type Mode = "sign-in" | "sign-up";
 
 export default function HomePage() {
   const [me, setMe] = useState<Me | null>(null);
   const [ready, setReady] = useState(false);
+  const [mode, setMode] = useState<Mode>("sign-in");
+  const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -48,24 +47,43 @@ export default function HomePage() {
     };
   }, []);
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPending(true);
+  function switchMode(next: Mode) {
+    setMode(next);
     setError("");
+    setPassword("");
+    setConfirmPassword("");
+  }
+
+  async function onSubmit(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    if (mode === "sign-up" && password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setPending(true);
+    const path = mode === "sign-in" ? "/api/sessions" : "/api/users";
+    const payload =
+      mode === "sign-in"
+        ? { email, password }
+        : { display_name: displayName, email, password };
     try {
-      const response = await fetch("/api/sessions", {
+      const response = await fetch(path, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(payload),
       });
       const body = (await response.json()) as Me & { detail?: string };
       if (!response.ok) {
-        setError(body.detail ?? "Sign-in failed.");
+        const fallback = mode === "sign-in" ? "Sign-in failed." : "Sign-up failed.";
+        setError(typeof body.detail === "string" ? body.detail : fallback);
         return;
       }
       setMe(body);
       setPassword("");
+      setConfirmPassword("");
     } catch {
       setError("The sign-in service is unavailable.");
     } finally {
@@ -83,6 +101,9 @@ export default function HomePage() {
       });
       if (response.ok || response.status === 204) {
         setMe(null);
+        setMode("sign-in");
+        setPassword("");
+        setConfirmPassword("");
         return;
       }
       setError("Sign-out failed.");
@@ -93,40 +114,63 @@ export default function HomePage() {
     }
   }
 
+  if (ready && me) {
+    return (
+      <main className="home">
+        <header className="top">
+          <p className="mark">Learning Lab</p>
+          <button
+            type="button"
+            className="quiet"
+            onClick={signOut}
+            disabled={pending}
+          >
+            {pending ? "Signing out…" : "Sign out"}
+          </button>
+        </header>
+        <h1>Home</h1>
+        <p className="lede">Welcome, {me.display_name}.</p>
+        {error ? (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <section className="placeholder">
+          <h2>Classes</h2>
+          <p>Your classes will show up here.</p>
+        </section>
+      </main>
+    );
+  }
+
+  const signingUp = mode === "sign-up";
+
   return (
     <main className="shell">
       <section className="panel">
         <p className="mark">Learning Lab</p>
-        <h1>{me ? "Signed in" : "Sign in"}</h1>
+        <h1>{signingUp ? "Create an account" : "Sign in"}</h1>
         <p className="lede">
-          {me
-            ? "Your school account is open in this browser."
-            : "Use the account your school gave you."}
+          {signingUp
+            ? "Use your name, email, and a password."
+            : "Use the account your school gave you, or create one."}
         </p>
         {!ready ? <p className="status">Checking your session…</p> : null}
-        {ready && me ? (
-          <div className="account">
-            <p className="name">{me.display_name}</p>
-            <p>{me.email}</p>
-            {me.memberships.length === 0 ? (
-              <p className="role">
-                This account is not a member of a school yet.
-              </p>
-            ) : (
-              me.memberships.map((membership) => (
-                <p className="role" key={membership.organization_id}>
-                  {membership.organization_name} · {roleLabel(membership.role)}
-                </p>
-              ))
-            )}
-            {error ? <p className="error">{error}</p> : null}
-            <button type="button" onClick={signOut} disabled={pending}>
-              {pending ? "Signing out…" : "Sign out"}
-            </button>
-          </div>
-        ) : null}
-        {ready && !me ? (
+        {ready ? (
           <form onSubmit={onSubmit}>
+            {signingUp ? (
+              <label>
+                Name
+                <input
+                  type="text"
+                  name="name"
+                  autoComplete="name"
+                  value={displayName}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  required
+                />
+              </label>
+            ) : null}
             <label>
               Email
               <input
@@ -143,20 +187,52 @@ export default function HomePage() {
               <input
                 type="password"
                 name="password"
-                autoComplete="current-password"
+                autoComplete={signingUp ? "new-password" : "current-password"}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
+                minLength={signingUp ? 8 : undefined}
               />
             </label>
+            {signingUp ? (
+              <label>
+                Confirm password
+                <input
+                  type="password"
+                  name="confirm-password"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  required
+                  minLength={8}
+                />
+              </label>
+            ) : null}
             {error ? (
               <p className="error" role="alert">
                 {error}
               </p>
             ) : null}
             <button type="submit" disabled={pending}>
-              {pending ? "Signing in…" : "Sign in"}
+              {pending
+                ? signingUp
+                  ? "Creating account…"
+                  : "Signing in…"
+                : signingUp
+                  ? "Create account"
+                  : "Sign in"}
             </button>
+            <p className="switch">
+              {signingUp ? "Already have an account? " : "New here? "}
+              <button
+                type="button"
+                className="text-button"
+                onClick={() => switchMode(signingUp ? "sign-in" : "sign-up")}
+                disabled={pending}
+              >
+                {signingUp ? "Sign in" : "Create an account"}
+              </button>
+            </p>
           </form>
         ) : null}
       </section>
