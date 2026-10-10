@@ -9,14 +9,11 @@ def _normalize_email(value: str) -> str:
     # .test is the reserved domain used by the local seed account.
     allow_reserved = cleaned.lower().rsplit("@", 1)[-1].endswith(".test")
     try:
-        return (
-            validate_email(
-                cleaned,
-                check_deliverability=False,
-                test_environment=allow_reserved,
-            )
-            .normalized.lower()
-        )
+        return validate_email(
+            cleaned,
+            check_deliverability=False,
+            test_environment=allow_reserved,
+        ).normalized.lower()
     except EmailNotValidError as exc:
         raise ValueError("Enter a valid email address.") from exc
 

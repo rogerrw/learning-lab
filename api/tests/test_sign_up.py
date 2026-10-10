@@ -72,6 +72,5 @@ def test_short_password_is_rejected(client: TestClient) -> None:
 
     assert response.status_code == 422
     assert (
-        response.json()["detail"][0]["msg"]
-        == "Value error, Use at least 8 characters."
+        response.json()["detail"][0]["msg"] == "Value error, Use at least 8 characters."
     )

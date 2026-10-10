@@ -37,7 +37,7 @@ GitHub Actions runs `scripts/lint` on every pull request and on every push to `m
 
 ## Stack
 
-- Frontend: Next.js and TypeScript
+- Frontend: Next.js, TypeScript, Tailwind CSS, and shadcn/ui
 - Backend: Python and FastAPI
 - Database: Postgres
 

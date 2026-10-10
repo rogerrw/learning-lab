@@ -20,7 +20,7 @@ Learning Lab is a classroom app.
 
 ## Stack
 
-- Frontend: Next.js and TypeScript
+- Frontend: Next.js, TypeScript, Tailwind CSS, and shadcn/ui. Components live in `web/components/ui` and are added with the shadcn CLI from `web/`.
 - Backend: Python and FastAPI
 - Database: Postgres
 

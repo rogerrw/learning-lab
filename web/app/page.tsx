@@ -2,6 +2,17 @@
 
 import { type SubmitEvent, useEffect, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
 type Membership = {
   organization_id: string;
   organization_name: string;
@@ -77,7 +88,8 @@ export default function HomePage() {
       });
       const body = (await response.json()) as Me & { detail?: string };
       if (!response.ok) {
-        const fallback = mode === "sign-in" ? "Sign-in failed." : "Sign-up failed.";
+        const fallback =
+          mode === "sign-in" ? "Sign-in failed." : "Sign-up failed.";
         setError(typeof body.detail === "string" ? body.detail : fallback);
         return;
       }
@@ -116,29 +128,37 @@ export default function HomePage() {
 
   if (ready && me) {
     return (
-      <main className="home">
-        <header className="top">
-          <p className="mark">Learning Lab</p>
-          <button
+      <main className="mx-auto min-h-svh max-w-3xl px-5 pt-7 pb-16">
+        <header className="mb-12 flex items-center justify-between gap-4 font-sans">
+          <p className="text-[13px] tracking-[0.08em] text-muted-foreground uppercase">
+            Learning Lab
+          </p>
+          <Button
             type="button"
-            className="quiet"
+            variant="outline"
             onClick={signOut}
             disabled={pending}
           >
             {pending ? "Signing out…" : "Sign out"}
-          </button>
+          </Button>
         </header>
-        <h1>Home</h1>
-        <p className="lede">Welcome, {me.display_name}.</p>
+        <h1 className="text-[32px] leading-[1.15] font-semibold">Home</h1>
+        <p className="mt-2 mb-6 text-muted-foreground">
+          Welcome, {me.display_name}.
+        </p>
         {error ? (
-          <p className="error" role="alert">
+          <p className="mb-4 font-sans text-sm text-destructive" role="alert">
             {error}
           </p>
         ) : null}
-        <section className="placeholder">
-          <h2>Classes</h2>
-          <p>Your classes will show up here.</p>
-        </section>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Classes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription>Your classes will show up here.</CardDescription>
+          </CardContent>
+        </Card>
       </main>
     );
   }
@@ -146,94 +166,115 @@ export default function HomePage() {
   const signingUp = mode === "sign-up";
 
   return (
-    <main className="shell">
-      <section className="panel">
-        <p className="mark">Learning Lab</p>
-        <h1>{signingUp ? "Create an account" : "Sign in"}</h1>
-        <p className="lede">
+    <main className="grid min-h-svh place-items-center px-4 py-8">
+      <section className="w-full max-w-[420px]">
+        <p className="mb-2 font-sans text-[13px] tracking-[0.08em] text-muted-foreground uppercase">
+          Learning Lab
+        </p>
+        <h1 className="text-[32px] leading-[1.15] font-semibold">
+          {signingUp ? "Create an account" : "Sign in"}
+        </h1>
+        <p className="mt-2 mb-6 text-muted-foreground">
           {signingUp
             ? "Use your name, email, and a password."
             : "Use the account your school gave you, or create one."}
         </p>
-        {!ready ? <p className="status">Checking your session…</p> : null}
+        {!ready ? (
+          <p className="text-muted-foreground">Checking your session…</p>
+        ) : null}
         {ready ? (
-          <form onSubmit={onSubmit}>
-            {signingUp ? (
-              <label>
-                Name
-                <input
-                  type="text"
-                  name="name"
-                  autoComplete="name"
-                  value={displayName}
-                  onChange={(event) => setDisplayName(event.target.value)}
-                  required
-                />
-              </label>
-            ) : null}
-            <label>
-              Email
-              <input
-                type="email"
-                name="email"
-                autoComplete="username"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Password
-              <input
-                type="password"
-                name="password"
-                autoComplete={signingUp ? "new-password" : "current-password"}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-                minLength={signingUp ? 8 : undefined}
-              />
-            </label>
-            {signingUp ? (
-              <label>
-                Confirm password
-                <input
-                  type="password"
-                  name="confirm-password"
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  required
-                  minLength={8}
-                />
-              </label>
-            ) : null}
-            {error ? (
-              <p className="error" role="alert">
-                {error}
-              </p>
-            ) : null}
-            <button type="submit" disabled={pending}>
-              {pending
-                ? signingUp
-                  ? "Creating account…"
-                  : "Signing in…"
-                : signingUp
-                  ? "Create account"
-                  : "Sign in"}
-            </button>
-            <p className="switch">
-              {signingUp ? "Already have an account? " : "New here? "}
-              <button
-                type="button"
-                className="text-button"
-                onClick={() => switchMode(signingUp ? "sign-in" : "sign-up")}
-                disabled={pending}
-              >
-                {signingUp ? "Sign in" : "Create an account"}
-              </button>
-            </p>
-          </form>
+          <Card>
+            <CardContent>
+              <form className="grid gap-3.5 font-sans" onSubmit={onSubmit}>
+                {signingUp ? (
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="name">Name</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      name="name"
+                      autoComplete="name"
+                      value={displayName}
+                      onChange={(event) => setDisplayName(event.target.value)}
+                      required
+                    />
+                  </div>
+                ) : null}
+                <div className="grid gap-1.5">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    name="email"
+                    autoComplete="username"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    name="password"
+                    autoComplete={
+                      signingUp ? "new-password" : "current-password"
+                    }
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    minLength={signingUp ? 8 : undefined}
+                  />
+                </div>
+                {signingUp ? (
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="confirm-password">Confirm password</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      name="confirm-password"
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(event) =>
+                        setConfirmPassword(event.target.value)
+                      }
+                      required
+                      minLength={8}
+                    />
+                  </div>
+                ) : null}
+                {error ? (
+                  <p className="text-sm text-destructive" role="alert">
+                    {error}
+                  </p>
+                ) : null}
+                <Button type="submit" disabled={pending}>
+                  {pending
+                    ? signingUp
+                      ? "Creating account…"
+                      : "Signing in…"
+                    : signingUp
+                      ? "Create account"
+                      : "Sign in"}
+                </Button>
+                <p className="text-sm text-muted-foreground">
+                  {signingUp ? "Already have an account? " : "New here? "}
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="h-auto px-0 underline"
+                    onClick={() =>
+                      switchMode(signingUp ? "sign-in" : "sign-up")
+                    }
+                    disabled={pending}
+                  >
+                    {signingUp ? "Sign in" : "Create an account"}
+                  </Button>
+                </p>
+              </form>
+            </CardContent>
+          </Card>
         ) : null}
       </section>
     </main>
